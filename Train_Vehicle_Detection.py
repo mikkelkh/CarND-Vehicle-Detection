@@ -53,27 +53,8 @@ rand_state = np.random.randint(0, 100)
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=rand_state)
 
-### TODO: Tweak these parameters and see how the results change.
-#colorspace = 'RGB' # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
 
-#hog_channels = [0,1,2,"ALL"]
-#for hog_channel in hog_channels:
-#    print(hog_channel)
-
-#cell_per_blocks = [1,2,4,8]
-#for cell_per_block in cell_per_blocks:
-#    print(cell_per_block)
-#
-#pix_per_cells = [4,8,16,32]
-#for pix_per_cell in pix_per_cells:
-#    print(pix_per_cell)
-    
-#colorspaces = ['RGB', 'HSV', 'LUV', 'HLS', 'YUV', 'YCrCb']
-#for colorspace in colorspaces:
-#    print(colorspace)
-#orients = [3,5,7,9,11,13,15]
-#for orient in orients:
-#    print("orient=",orient)
+# Tweaked parameters
 colorspace = 'YCrCb'
 orient = 9
 pix_per_cell = 8
@@ -81,10 +62,10 @@ cell_per_block = 2
 hog_channel = "ALL" # Can be 0, 1, 2, or "ALL"
 
 t=time.time()
-feat_train = extract_features(X_train, cspace=colorspace, orient=orient, 
+feat_train = extract_features_from_image_list(X_train, cspace=colorspace, orient=orient, 
                         pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
                         hog_channel=hog_channel,feature_vec=True)
-feat_test = extract_features(X_test, cspace=colorspace, orient=orient, 
+feat_test = extract_features_from_image_list(X_test, cspace=colorspace, orient=orient, 
                         pix_per_cell=pix_per_cell, cell_per_block=cell_per_block, 
                         hog_channel=hog_channel,feature_vec=True)
 t2 = time.time()
@@ -110,6 +91,18 @@ t2 = time.time()
 print(round(t2-t, 2), 'Seconds to train SVC...')
 # Check the score of the SVC
 print('Test Accuracy of SVC = ', round(svc.score(feat_test_scaled, y_test), 4))
+
+svc_pickle = {}
+svc_pickle['colorspace'] = colorspace
+svc_pickle['orient'] = orient
+svc_pickle['pix_per_cell'] = pix_per_cell
+svc_pickle['cell_per_block'] = cell_per_block
+svc_pickle['hog_channel'] = hog_channel
+svc_pickle['feat_scaler'] = feat_scaler
+svc_pickle['svc'] = svc
+
+pickle.dump( svc_pickle, open( "svc_pickle.p", "wb" ) )
+
 # Check the prediction time for a single sample
 #t=time.time()
 #n_predict = 10
