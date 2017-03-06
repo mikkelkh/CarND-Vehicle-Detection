@@ -17,7 +17,7 @@ import os
 import glob
 from Features import *
 import time
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
@@ -34,18 +34,10 @@ for image in carsImages:
 for image in notcarsImages:
     notcars.append(image)
 
-print(len(cars))
-print(len(notcars))
-
-# Reduce the sample size because HOG features are slow to compute
-# The quiz evaluator times out after 13s of CPU time
-#sample_size = 500
-#cars = cars[0:sample_size]
-#notcars = notcars[0:sample_size]
+# Concatenate the two classes
+X = cars+notcars
 
 # Define the labels vector
-#X = [cars,notcars]
-X = cars+notcars
 y = np.hstack((np.ones(len(cars)), np.zeros(len(notcars))))
 
 # Split up data into randomized training and test sets
@@ -53,8 +45,9 @@ rand_state = np.random.randint(0, 100)
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=rand_state)
 
+## Extract HOG features
 
-# Tweaked parameters
+# Tweaked HOG parameters
 colorspace = 'YCrCb'
 orient = 9
 pix_per_cell = 8
@@ -70,28 +63,31 @@ feat_test = extract_features_from_image_list(X_test, cspace=colorspace, orient=o
                         hog_channel=hog_channel,feature_vec=True)
 t2 = time.time()
 print(round(t2-t, 2), 'Seconds to extract HOG features...')
-# Create an array stack of feature vectors
-#X = np.vstack((car_features, notcar_features)).astype(np.float64)                        
-# Fit a per-column scaler
+
+# Fit the normalization function on training data
 feat_scaler = StandardScaler().fit(feat_train)
-# Apply the scaler to X
+
+# Apply the normalization to both training and test data
 feat_train_scaled = feat_scaler.transform(feat_train)
 feat_test_scaled = feat_scaler.transform(feat_test)
-
 
 print('Using:',orient,'orientations',pix_per_cell,
     'pixels per cell and', cell_per_block,'cells per block')
 print('Feature vector length:', len(X_train[0]))
-# Use a linear SVC 
+
+# Use a linear SVC ('rbf' kernel is too slow)
 svc = LinearSVC()
+
 # Check the training time for the SVC
 t=time.time()
 svc.fit(feat_train_scaled, y_train)
 t2 = time.time()
 print(round(t2-t, 2), 'Seconds to train SVC...')
+
 # Check the score of the SVC
 print('Test Accuracy of SVC = ', round(svc.score(feat_test_scaled, y_test), 4))
 
+# Save the model and its parameters
 svc_pickle = {}
 svc_pickle['colorspace'] = colorspace
 svc_pickle['orient'] = orient
@@ -102,22 +98,3 @@ svc_pickle['feat_scaler'] = feat_scaler
 svc_pickle['svc'] = svc
 
 pickle.dump( svc_pickle, open( "svc_pickle.p", "wb" ) )
-
-# Check the prediction time for a single sample
-#t=time.time()
-#n_predict = 10
-#print('My SVC predicts: ', svc.predict(X_test[0:n_predict]))
-#print('For these',n_predict, 'labels: ', y_test[0:n_predict])
-#t2 = time.time()
-#print(round(t2-t, 5), 'Seconds to predict', n_predict,'labels with SVC')
-
-
-
-#images = glob.glob('*.jpeg')
-#cars = []
-#notcars = []
-#for image in images:
-#    if 'image' in image or 'extra' in image:
-#        notcars.append(image)
-#    else:
-#        cars.append(image)
