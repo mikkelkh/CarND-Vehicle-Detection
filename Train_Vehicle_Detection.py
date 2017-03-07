@@ -23,16 +23,8 @@ from sklearn.model_selection import train_test_split
 
 # Read in cars and notcars
 srcFolder = '../data/CarND-Vehicle-Detection'
-carsImages = glob.glob(os.path.join(srcFolder,'vehicles','**/*.png'),recursive=True)
-notcarsImages = glob.glob(os.path.join(srcFolder,'non-vehicles','**/*.png'),recursive=True)
-
-cars = []
-notcars = []
-
-for image in carsImages:
-    cars.append(image)
-for image in notcarsImages:
-    notcars.append(image)
+cars = glob.glob(os.path.join(srcFolder,'vehicles','**/*.png'),recursive=True)
+notcars = glob.glob(os.path.join(srcFolder,'non-vehicles','**/*.png'),recursive=True)
 
 # Concatenate the two classes
 X = cars+notcars
@@ -52,7 +44,7 @@ colorspace = 'YCrCb'
 orient = 9
 pix_per_cell = 8
 cell_per_block = 2
-hog_channel = "ALL" # Can be 0, 1, 2, or "ALL"
+hog_channel = "ALL" # Can be [0], [1], [2], a combination, or "ALL"
 
 t=time.time()
 feat_train = extract_features_from_image_list(X_train, cspace=colorspace, orient=orient, 
@@ -73,7 +65,7 @@ feat_test_scaled = feat_scaler.transform(feat_test)
 
 print('Using:',orient,'orientations',pix_per_cell,
     'pixels per cell and', cell_per_block,'cells per block')
-print('Feature vector length:', len(X_train[0]))
+print('Feature vector length:', len(feat_train_scaled[0]))
 
 # Use a linear SVC ('rbf' kernel is too slow)
 svc = LinearSVC()
