@@ -72,18 +72,20 @@ hog_channel = svc_pickle['hog_channel']
 feat_scaler = svc_pickle['feat_scaler']
 svc = svc_pickle['svc']
 # Window search parameters
+xstart = 650
+xstop = 1250
 ystart = 400
-ystop = 656
-scales = [1.5,1]
+ystop = 500
+scales = [2.4,1.8,1.4,1]
 
 file = 'test_images/test6.jpg'
 image1 = cv2.imread(file)
-windows1 = find_cars(image1[:,:,[2,1,0]], ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
+windows1 = find_cars(image1[:,:,[2,1,0]], xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
 car_with_boxes1 = draw_boxes(image1[:,:,[2,1,0]].copy(), windows1, color=(0, 0, 255), thick=6)
 
 file = 'test_images/test2.jpg'
 image2 = cv2.imread(file)
-windows2 = find_cars(image2[:,:,[2,1,0]], ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
+windows2 = find_cars(image2[:,:,[2,1,0]], xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
 car_with_boxes2 = draw_boxes(image2[:,:,[2,1,0]].copy(), windows2, color=(0, 0, 255), thick=6)
 
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 7))
@@ -96,6 +98,22 @@ extent = f.get_window_extent().transformed(f.dpi_scale_trans.inverted())
 plt.savefig('output_images/boxes.jpg', bbox_inches=extent.expanded(1, 1.2), dpi=50)
 
 
+
+
+## Show ROI ##
+bboxes = [[(500,650),(1250,400)]]
+ROI = draw_boxes(image1[:,:,[2,1,0]].copy(), bboxes, color=(0, 0, 255), thick=6)
+#f, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 7))
+f = plt.figure()
+#f.tight_layout()
+plt.imshow(ROI)
+plt.title('ROI', fontsize=30)
+#ax1.imshow(ROI)
+#ax1.set_title('ROI', fontsize=30)
+#ax2.imshow(ROI)
+#ax2.set_title('Thresholded heatmap', fontsize=30)
+extent = f.get_window_extent().transformed(f.dpi_scale_trans.inverted())
+plt.savefig('output_images/ROI.jpg', dpi=100)
 
 
 ## Show heatmap example ##
@@ -117,7 +135,7 @@ plt.savefig('output_images/heat.jpg', bbox_inches=extent.expanded(1, 1.2), dpi=5
 
 ## Show heatmaps on video example ##
 from moviepy.editor import VideoFileClip
-processObj = ProcessClass(10, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc, debug=True)
-clip1 = VideoFileClip("project_video.mp4").subclip(39,41)
+processObj = ProcessClass(20, xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc, debug=True)
+clip1 = VideoFileClip("project_video.mp4").subclip(16,19)#.subclip(39,41)
 white_clip = clip1.fl_image(processObj.process_frame)
 white_clip.write_videofile('test.mp4', audio=False)

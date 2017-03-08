@@ -93,9 +93,9 @@ The sliding window search is performed in the `find_cars()` function in `Detecti
 Here, the input image is first cropped in the y-dimension, such that we don't search for vehicles in the sky.
 
 Next, we loop over the requested scales, such that the window search is performed on multiple scales.
-I use two scales: 1 and 1.5.
+I use four scales: 2.4, 1.8, 1.4, and 1.
 This was found by trial-and-error with qualitative evaluation of the detection results.
-Since the training examples were all 64x64 pixels, we effectively search with windows of size 64x64 and 96x96.
+Since the training examples were all 64x64 pixels, we effectively search with windows of size 154x154, 115x115, 90x90 and 64x64.
 The implementation, however, resizes the image instead of the windows.
 In this way, we can use the same classifier and feature extraction process for all scales.
 
@@ -114,18 +114,33 @@ Clearly, there are a lot of false positives.
 The code for this step is contained in `Detection.py` and `Test_Vehicle_Detection.py`.
 
 As seen above, there are a lot of false positives.
-By adding each detection to a heatmap, I can filter for some of these and improve the result.
+
+I first add a ROI to filter out a lot of these. I use the following window parameters:
+
+| Lower-left coords | Upper-right coords |
+|:-----------------:|:------------------:|
+| 500,650           | 1250,400           |
+
+Note that this small ROI will actually only work on the specific test images and video where the lane turns slightly to the right. However, a Udacity reviewer recommended this small ROI, and therefore I am using it.
+In a real-world application, either a larger ROI or an adaptive ROI utilizing information about lane curvature would be needed.
+The image below shows this ROI on top of one of the test images.
+
+![alt text](output_images/ROI.jpg)
+
+In addition to providing a ROI for each frame, I also add each detection to a heatmap, initialized with zeros.
+That is, for each detected window, I add the value 1 to the heatmap for all pixels inside the window.
+In locations with multiple overlapping windows, the heatmap will thus have a high value, whereas for single false positive windows, the heatmap will be 1.
+By thresholding this heatmap, I can filter out some of the false detections and thus improve the result.
+For single frames (the test images), I use a threshold of 1, meaning that at least two window detections must overlap in order to keep the detection.
+That is, non-overlapping window detections are filtered out.
 
 In `Detection.py`, I use the list of vehicle detections provided by the `find_cars()` function described above, to construct a heatmap for each frame.
 This is done in the `process_image()` function.
-For each detected window, we add 1 to the heatmap for all pixels inside the window.
-In locations with multiple overlapping windows, the heatmap will thus have a high value, whereas for single false positive windows, the heatmap will be 1.
-By thresholding the heatmap, we can thus effectively filter out some of the false detections.
-I have used the sample code by Udacity to handle the heatmap.
-
+Subsequently, the thresholding is applied.
 Ultimately, the thresholded heatmap is processed by fitting bounding boxes to connected components.
 This is done with the `label()` function in *scipy.ndimage.measurements*.
 These bounding boxes are then drawn on top of the original images.
+I have used the sample code by Udacity to handle the heatmap and thresholding.
 
 An example image is shown below with a thresholded heatmap and the resulting bounding boxes.
 
@@ -146,17 +161,18 @@ The video can be accessed [here](./project_video_result.mp4)
 The code for this step is contained in `Detection.py` and `Test_Vehicle_Detection.py`.
 
 For the video, I have used the same processing pipeline as for the individual test images.
-However, instead of just constructing a heatmap and thresholding it for each image, I use a FIFO buffer with window detections for the past 10 frames that are used to construct a combined heatmap.
+However, instead of just constructing a heatmap and thresholding it for each image, I use a FIFO buffer with window detections for the past 20 frames that are used to construct a combined heatmap.
 This can then be thresholded with a higher threshold and thus filter out more false positives.
-I have used a threshold of 7, meaning that at least 7 out of 10 frames must have overlapping window detections in order to result in a bounding box.
+For single images, I used a threshold of 1.
+For the video, I have used a threshold corresponding to the buffer length + 1 (=21), meaning that at least 21 overlapping window detections must have occured within the last 20 frames in order to result in a bounding box.
 
 Examples of heatmaps (not thresholded) and resulting bounding boxes for different frames are shown below.
 
-![alt text](output_images/det_heat_10.jpg)
 ![alt text](output_images/det_heat_20.jpg)
 ![alt text](output_images/det_heat_30.jpg)
 ![alt text](output_images/det_heat_40.jpg)
 ![alt text](output_images/det_heat_50.jpg)
+![alt text](output_images/det_heat_60.jpg)
 
 ---
 

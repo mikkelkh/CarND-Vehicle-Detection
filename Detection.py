@@ -69,9 +69,9 @@ def draw_labeled_bboxes(img, labels):
 
 # Single function extracting features using HOG sub-sampling and making predictions
 # This function is adapted from Udacity sample code
-def find_cars(img, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc):
+def find_cars(img, xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc):
     # Convert from RGB color convention to BGR (OpenCV)
-    img_tosearch = img[ystart:ystop,:,[2,1,0]]
+    img_tosearch = img[ystart:ystop,xstart:xstop,[2,1,0]]
     
     # Loop over requested scales
     for scale in scales:
@@ -127,7 +127,7 @@ def find_cars(img, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell
                     xbox_left = np.int(xleft*scale)
                     ytop_draw = np.int(ytop*scale)
                     win_draw = np.int(window*scale)
-                    window_list.append(((xbox_left, ytop_draw+ystart),(xbox_left+win_draw,ytop_draw+win_draw+ystart)))
+                    window_list.append(((xbox_left+xstart, ytop_draw+ystart),(xbox_left+win_draw+xstart,ytop_draw+win_draw+ystart)))
                 
     # Return all detections as bounding boxes
     return window_list
@@ -135,7 +135,7 @@ def find_cars(img, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell
 # Processing pipeline
 def process_image(self,image):
     # Extract features, perform sliding window and make predictions
-    windows = find_cars(image, self.ystart, self.ystop, self.scales, self.colorspace, self.orient, self.pix_per_cell, self.cell_per_block, self.hog_channel, self.feat_scaler, self.svc)
+    windows = find_cars(image, self.xstart, self.xstop, self.ystart, self.ystop, self.scales, self.colorspace, self.orient, self.pix_per_cell, self.cell_per_block, self.hog_channel, self.feat_scaler, self.svc)
     
     # Tracking
     # FIFO buffer with previously detected bounding boxes
@@ -154,7 +154,7 @@ def process_image(self,image):
     heatmap_before_thresh = np.clip(heat, 0, 255).copy()
 
     # Apply threshold to help remove false positives (depends on FIFO buffer length)
-    heat = apply_threshold(heat,1+len(self.bboxes)*2/3)
+    heat = apply_threshold(heat,1+int(len(self.bboxes)-1))
     
     # Visualize the heatmap when displaying    
     heatmap = np.clip(heat, 0, 255)
@@ -180,9 +180,11 @@ def process_image(self,image):
 
 # Define processing class. This is used to hold the FIFO buffer that is used for video processing
 class ProcessClass:
-    def __init__(self, nFrames, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc, debug=False):
+    def __init__(self, nFrames, xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc, debug=False):
         # Instantiate empty FIFO buffer with length 'nFrames'
         self.bboxes = ([[]]*nFrames).copy()
+        self.xstart = xstart
+        self.xstop = xstop
         self.ystart = ystart
         self.ystop = ystop
         self.scales = scales

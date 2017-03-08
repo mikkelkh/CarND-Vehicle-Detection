@@ -36,15 +36,17 @@ feat_scaler = svc_pickle['feat_scaler']
 svc = svc_pickle['svc']
 
 # Window search parameters
+xstart = 650
+xstop = 1250
 ystart = 400
-ystop = 656
-scales = [1.5,1]
+ystop = 500
+scales = [2.4,1.8,1.4,1]
 
 ## Run algorithm on: Test images
 files = glob.glob('test_images/*.jpg')
 
 # Intantiate processing class object with 1 frame FIFO buffer (single image)
-processObj = ProcessClass(1, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
+processObj = ProcessClass(1, xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
 for fname in files:
     # Load image
     image = cv2.imread(fname)
@@ -62,11 +64,11 @@ for fname in files:
 from moviepy.editor import VideoFileClip
 
 # Intantiate processing class object with 10 frames FIFO buffer (for video)
-processObj = ProcessClass(10, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
+processObj = ProcessClass(20, xstart, xstop, ystart, ystop, scales, colorspace, orient, pix_per_cell, cell_per_block, hog_channel, feat_scaler, svc)
 
 # Open video and process each frame
 output = 'project_video_result.mp4'
 #clip1 = VideoFileClip("test_video.mp4")
-clip1 = VideoFileClip("project_video.mp4")
+clip1 = VideoFileClip("project_video.mp4")#.subclip(16,20)
 white_clip = clip1.fl_image(processObj.process_frame)
 white_clip.write_videofile(output, audio=False)
